@@ -71,6 +71,7 @@ def recognizing_the_staves_simple(music_sheet):
 #welcome git
 #TODO add general class for the music reader
 #TODO prepare binary search based on sorted stave list
+#TODO add a better way of undarstanding to what stave each note belong
 
 
 
