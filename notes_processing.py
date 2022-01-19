@@ -26,8 +26,21 @@ def recognizing_the_staves_simple(music_sheet):
     i = 0
     group_index = 0
     while i < len(diff_staves_locations):
-        if diff_staves_locations[i]:
-            pass
+        cur_diff = diff_staves_locations[i]
+        if cur_diff <= 2:
+            i += 1
+            continue
+        if cur_diff > 9:
+            staves_grouping_location.append([])
+            group_index += 1
+        staves_grouping_location[group_index].append(simp_staves_locations[i + 1])
+        i += 1
+    for group in staves_grouping_location:
+        if len(group) != 5:
+            continue
+
+
+
 
 
 
