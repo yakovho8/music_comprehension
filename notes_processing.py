@@ -4,6 +4,28 @@ import numpy as np
 music_file = Image.open('turkish_final1.png')
 music_img = np.asarray(music_file)
 
+class Stave:
+    def __init__(self,mi, sol, si, re, fa,next_stave):
+        self. mi = mi
+        self.sol = sol
+        self.si = si
+        self.re = re
+        self.fa = fa
+        self.next_stave_end = next_stave
+        self.next_stave_diff = self.next_stave_end - self.mi
+        self.pre_stave_start = None
+        self.pre_stave_diff = None
+        self.real_start = mi + self.next_stave_diff/2.0
+        self.real_end = None
+
+    def in_stave(self, loc):
+        return self.real_end <= loc <= self.real_start
+
+    def configure_prev(self, prev_stave):
+        self.pre_stave_start = prev_stave
+        self.pre_stave_diff = self.fa - self.pre_stave_start
+        self.real_end = self.pre_stave_start - self.pre_stave_diff/2.0
+        return
 
 def recognizing_the_staves_simple(music_sheet):
     staves = dict()
@@ -30,7 +52,7 @@ def recognizing_the_staves_simple(music_sheet):
         if cur_diff <= 2:
             i += 1
             continue
-        if cur_diff > 9:
+        if cur_diff > ((len(music_sheet)/128.0) + 1):
             staves_grouping_location.append([])
             group_index += 1
         staves_grouping_location[group_index].append(simp_staves_locations[i + 1])
@@ -38,6 +60,8 @@ def recognizing_the_staves_simple(music_sheet):
     for group in staves_grouping_location:
         if len(group) != 5:
             continue
+        #TODO add stave creation
+
 
 
 
@@ -45,6 +69,8 @@ def recognizing_the_staves_simple(music_sheet):
 
 
 #welcome git
+#TODO add general class for the music reader
+#TODO prepare binary search based on sorted stave list
 
 
 
