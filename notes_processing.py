@@ -4,27 +4,32 @@ import numpy as np
 music_file = Image.open('turkish_final1.png')
 music_img = np.asarray(music_file)
 
-class Stave:
-    def __init__(self,mi, sol, si, re, fa,next_stave):
+class Stave_Group:
+    def __init__(self,fa, re, si, sol, mi,next_stave):
         self. mi = mi
         self.sol = sol
         self.si = si
         self.re = re
         self.fa = fa
-        self.next_stave_end = next_stave
-        self.next_stave_diff = self.next_stave_end - self.mi
-        self.pre_stave_start = None
+        self.next_stave = next_stave
+        self.next_stave_end = None
+        self.next_stave_diff = None
+        self.real_start = None
+        if self.next_stave is not None:
+            self.next_stave_end = next_stave.fa
+            self.next_stave_diff = self.next_stave_end - self.mi
+            self.real_start = mi + self.next_stave_diff / 2.0
+        self.pre_stave = None
         self.pre_stave_diff = None
-        self.real_start = mi + self.next_stave_diff/2.0
         self.real_end = None
 
     def in_stave(self, loc):
         return self.real_end <= loc <= self.real_start
 
     def configure_prev(self, prev_stave):
-        self.pre_stave_start = prev_stave
-        self.pre_stave_diff = self.fa - self.pre_stave_start
-        self.real_end = self.pre_stave_start - self.pre_stave_diff/2.0
+        self.pre_stave = prev_stave
+        self.pre_stave_diff = self.fa - self.pre_stave.mi
+        self.real_end = self.pre_stave.mi - self.pre_stave_diff/2.0
         return
 
 def recognizing_the_staves_simple(music_sheet):
@@ -34,7 +39,6 @@ def recognizing_the_staves_simple(music_sheet):
     #this loop finds the locations of  the assumed staves in the image
     #TODO:this part is so bad  there is so much work to do you idiot
     #TODO first getting rid of the assumption that the staves will be strictly straight lines
-    #TODO getting rid of the assumption that the width of the stave will be 1px
     #TODO getting rid of the simplistic calculation for the treshold of the  number of black pixels in stave calculation.The treshold suppose to be according to the start and the endof the staves
     for i in range(len(music_sheet)):
         cur_line = imp_music_sheet[i]
@@ -57,13 +61,19 @@ def recognizing_the_staves_simple(music_sheet):
             group_index += 1
         staves_grouping_location[group_index].append(simp_staves_locations[i + 1])
         i += 1
-    for group in staves_grouping_location:
-        if len(group) != 5:
-            continue
-        #TODO add stave creation
+    inv_stave_group = staves_grouping_location[::-1]
+    inv_stave_group = [i for i in inv_stave_group if len(i) == 5]
+    staves = []
+    for i in range(len(inv_stave_group)):
+        next_stave = None
+        if i != 0:
+            next_stave = staves[i-1]
+        cur_group = inv_stave_group[i]
+        staves.append(Stave_Group(cur_group[0], cur_group[1], cur_group[2], cur_group[3], cur_group[4], next_stave))
+        if i != 0:
+            staves[i-1].configure_prev(staves[i])
 
-
-
+    return staves[::-1]
 
 
 
@@ -72,7 +82,6 @@ def recognizing_the_staves_simple(music_sheet):
 #TODO add general class for the music reader
 #TODO prepare binary search based on sorted stave list
 #TODO add a better way of undarstanding to what stave each note belong
-
 
 
 recognizing_the_staves_simple(music_img)
