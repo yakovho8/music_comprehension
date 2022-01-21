@@ -68,7 +68,7 @@ class StaveGroup:
         #    self.next_stave_end = next_stave.fa
         # self.next_stave_diff = self.next_stave_end - self.mi
         # self.real_start = self.mi + self.next_stave_diff / 2.0
-        # self.pre_stave = None
+        self.prev_stave_stave = None
         # self.pre_stave_diff = None
         # self.real_end = None
         self.h_stave = self.stave_group[0].max_line
@@ -78,7 +78,7 @@ class StaveGroup:
     #    return self.real_end <= loc <= self.real_start
 
     def configure_prev(self, prev_stave):
-        self.pre_stave = prev_stave
+        self.prev_stave = prev_stave
         # self.pre_stave_diff = self.fa - self.pre_stave.mi
         # self.real_end = self.pre_stave.mi - self.pre_stave_diff / 2.0
         return
@@ -124,14 +124,34 @@ class MusicSheetProcessor:
         # TODO:this part is so bad  there is so much work to do you idiot
         # TODO first getting rid of the assumption that the staves will be strictly straight lines
         # TODO:
-        #  getting rid of the simplistic calculation for the treshold of number of black pixels in stave.
-        #  The treshold suppose to be according to the start and the end of the staves.
-        #  and not according to the page start and end. it is important for more precise calcualaation
+        #  check for improvement of the tresholding of the number of black pixel in the stave.
+        #  currently it takes in account the fact the stave lines wont start at the beginning of the page
 
         for i in range(len(music_sheet)):
             cur_line = imp_music_sheet[i]
+            # this part is checking that we wont miss staves only because they dont start at the beginning of the page and end in hte end
+
+            white_location = np.where(cur_line>200)[0]
+            j = 0
+            diff_white_location = white_location[1:] - white_location[:-1]
+            white_side_l = 0
+            if len(white_location) == len(cur_line):
+                continue
+            if white_location[0] == 0:
+                while diff_white_location[j] < 2 and j < len(diff_white_location):
+                    j+=1
+                white_side_l = white_location[j]
+            white_side_r = len(cur_line)
+            if white_location[-1] == len(cur_line) - 1:
+                j = 1
+                while diff_white_location[-j] < 2 and j < len(diff_white_location):
+                    j +=1
+                white_side_r = len(cur_line) - j
+            if white_side_r - white_side_l < 0.33*len(cur_line):
+                continue
+            cur_line = cur_line[white_side_l:white_side_r]
             num_black_pxl = len(np.where(cur_line < 200)[0])
-            if num_black_pxl > (3 * len(cur_line)) / 4.0:
+            if num_black_pxl >  (len(cur_line)*0.9):
                 simp_staves_locations.append(i)
         # grouping staves and filtering
         simp_staves_locations = np.array(simp_staves_locations)
@@ -195,7 +215,7 @@ class MusicSheetProcessor:
                     if location < group_2.l_stave:
                         group_1_gap = location - group_1.h_stave
                         group_2_gap = location - group_2.l_stave
-                        if group_1_gap> group_2_gap:
+                        if group_1_gap > group_2_gap:
                             return start, group_1
                         return end, group_2
                 start = cur_index + 1
