@@ -5,6 +5,10 @@ ON_LINE = 0
 UNDER_LINE = 1
 ABOVE_LINE = 2
 
+IN_GROUP = 0
+NEXT_GROUP = 1
+PREVIOUS_GROUP = 2
+
 RE = 0
 MI = 1
 FA = 2
@@ -44,8 +48,8 @@ class StaveLine:
         if self.min_line <= location <= self.max_line:
             return ON_LINE
         if self.max_line < location:
-            return ABOVE_LINE
-        return UNDER_LINE
+            return UNDER_LINE
+        return ABOVE_LINE
 
 
 class StaveGroup:
@@ -55,18 +59,20 @@ class StaveGroup:
         self.si = stave_group[-3]
         self.re = stave_group[-4]
         self.fa = stave_group[-5]
-        self.stave_group = stave_group
+        self.stave_group = stave_group[::-1]
         self.next_stave = next_stave
         self.next_stave_end = None
         self.next_stave_diff = None
         self.real_start = None
-        if self.next_stave is not None:
-            self.next_stave_end = next_stave.fa
-            # self.next_stave_diff = self.next_stave_end - self.mi
-            # self.real_start = self.mi + self.next_stave_diff / 2.0
-        self.pre_stave = None
+        # if self.next_stave is not None:
+        #    self.next_stave_end = next_stave.fa
+        # self.next_stave_diff = self.next_stave_end - self.mi
+        # self.real_start = self.mi + self.next_stave_diff / 2.0
+        # self.pre_stave = None
         # self.pre_stave_diff = None
         # self.real_end = None
+        self.h_stave = self.stave_group[0].max_line
+        self.l_stave = self.stave_group[-1].min_line
 
     # def in_stave(self, loc):
     #    return self.real_end <= loc <= self.real_start
@@ -93,9 +99,15 @@ class StaveGroup:
                 end = cur_index - 1
             else:
                 if (end - start) == 0 or end == cur_index:
-                    return line_to_note(cur_index,  location_status)
+                    return line_to_note(cur_index, location_status)
                 start = cur_index + 1
 
+    def in_group(self, location):
+        if self.h_stave >= location >= self.l_stave:
+            return IN_GROUP
+        if self.l_stave > location:
+            return PREVIOUS_GROUP
+        return NEXT_GROUP
 
 
 
@@ -152,10 +164,42 @@ class MusicSheetProcessor:
             if i != 0:
                 staves[i - 1].configure_prev(staves[i])
         self.staves = staves[::-1]
-        idk  = self.staves[-1].location_to_note(3060)
+        # print(self.staves[-1].location_to_note(3020))
+        print(self.location_to_group(2000)[0])
         return staves[::-1]
 
+    def location_to_group(self,location):
+        end = len(self.staves) - 1
+        start = 0
+        found_note = False
+        while not found_note:
+            cur_index = int((end + start) / 2)
+            cur_group = self.staves[cur_index]
+            location_status = cur_group.in_group(location)
+            if location_status == IN_GROUP:
+                return cur_index, cur_group
+            if location_status == PREVIOUS_GROUP:
+                if ((end - start) == 0) or (start == cur_index):
+                    return cur_index, cur_group
+                end = cur_index - 1
+            else:
+                if (end - start) == 0 or end == cur_index:
+                    return cur_index, location_status
+                if end - start == 1:
+                    group_1 = self.staves[start]
+                    group_2 = self.staves[end]
+                    if location < group_2.l_stave:
+                        group_1_gap = location - group_1.h_stave
+                        group_2_gap = location - group_2.l_stave
+                        if group_1_gap> group_2_gap:
+                            return start, group_1
+                        return end, group_2
+                start = cur_index + 1
 
+
+# TODO: improve how we resolve to which group the note is in when the note is between two groups
+#  currently it is resolved by checking to which group it is the closest
+#  although it is currently unknown if it is correct
 # TODO prepare binary search based on sorted stave list
 # TODO add a better way of undarstanding to what stave each note belong
 
