@@ -123,8 +123,10 @@ class MusicSheetProcessor:
         # this loop finds the locations of  the assumed staves in the image
         # TODO:this part is so bad  there is so much work to do you idiot
         # TODO first getting rid of the assumption that the staves will be strictly straight lines
-        # TODO: getting rid of the simplistic calculation for the treshold of the  number of black pixels in stave
-        #  calculation.The treshold suppose to be according to the start and the endof the staves
+        # TODO:
+        #  getting rid of the simplistic calculation for the treshold of number of black pixels in stave.
+        #  The treshold suppose to be according to the start and the end of the staves.
+        #  and not according to the page start and end. it is important for more precise calcualaation
 
         for i in range(len(music_sheet)):
             cur_line = imp_music_sheet[i]
@@ -165,7 +167,7 @@ class MusicSheetProcessor:
                 staves[i - 1].configure_prev(staves[i])
         self.staves = staves[::-1]
         # print(self.staves[-1].location_to_note(3020))
-        print(self.location_to_group(2000)[0])
+        #print(self.location_to_group(2000)[0])
         return staves[::-1]
 
     def location_to_group(self,location):
@@ -181,10 +183,12 @@ class MusicSheetProcessor:
             if location_status == PREVIOUS_GROUP:
                 if ((end - start) == 0) or (start == cur_index):
                     return cur_index, cur_group
+                if end - start == 1:
+                    return start, cur_group
                 end = cur_index - 1
             else:
                 if (end - start) == 0 or end == cur_index:
-                    return cur_index, location_status
+                    return cur_index, cur_group
                 if end - start == 1:
                     group_1 = self.staves[start]
                     group_2 = self.staves[end]
@@ -197,11 +201,14 @@ class MusicSheetProcessor:
                 start = cur_index + 1
 
 
-# TODO: improve how we resolve to which group the note is in when the note is between two groups
-#  currently it is resolved by checking to which group it is the closest
-#  although it is currently unknown if it is correct
-# TODO prepare binary search based on sorted stave list
-# TODO add a better way of undarstanding to what stave each note belong
+# TODO: improve how we resolve to which group the note is in when the note is between two groups currently it is
+#  resolved by checking to which group it is the closest although it is currently unknown if it is correct
+#  TODO:
+#   there is currently no way of determining what note the location represent for locations above the group or under.
+#   for example for h_la and l_do
+
+
+
 
 
 music_file = Image.open('turkish_1g.png')
