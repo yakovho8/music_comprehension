@@ -54,6 +54,7 @@ class StaveLine:
 
 class StaveGroup:
     def __init__(self, stave_group, next_stave):
+        self.prev_stave = None
         self.mi = stave_group[-1]
         self.sol = stave_group[-2]
         self.si = stave_group[-3]
@@ -68,7 +69,6 @@ class StaveGroup:
         #    self.next_stave_end = next_stave.fa
         # self.next_stave_diff = self.next_stave_end - self.mi
         # self.real_start = self.mi + self.next_stave_diff / 2.0
-        self.prev_stave_stave = None
         # self.pre_stave_diff = None
         # self.real_end = None
         self.h_stave = self.stave_group[0].max_line
@@ -78,10 +78,9 @@ class StaveGroup:
     #    return self.real_end <= loc <= self.real_start
 
     def configure_prev(self, prev_stave):
-        self.prev_stave = prev_stave
         # self.pre_stave_diff = self.fa - self.pre_stave.mi
         # self.real_end = self.pre_stave.mi - self.pre_stave_diff / 2.0
-        return
+        self.prev_stave = prev_stave
 
     def location_to_note(self, location):
         end = 4
@@ -129,9 +128,10 @@ class MusicSheetProcessor:
 
         for i in range(len(music_sheet)):
             cur_line = imp_music_sheet[i]
-            # this part is checking that we wont miss staves only because they dont start at the beginning of the page and end in hte end
+            # this part is checking that we wont miss staves only because they dont start at the beginning of the page
+            # and end in the end of the page
 
-            white_location = np.where(cur_line>200)[0]
+            white_location = np.where(cur_line > 200)[0]
             j = 0
             diff_white_location = white_location[1:] - white_location[:-1]
             white_side_l = 0
